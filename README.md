@@ -80,8 +80,8 @@ SQL columns use snake_case; TypeScript and API fields use camelCase (`createdAt`
 
 ## Verification and publication status
 
-The current combined 64-test foundation/customer/vehicle suite passes locally. Type checking, the production build, browser QA, and hosted D1 checks for the customer and vehicle UI remain unverified until the current revision is checked in a working build environment. The CI result below applies to the earlier Phase 0 source.
+The combined 64-test foundation/customer/vehicle suite passes locally and in GitHub Actions. Dependency installation, TypeScript checking and the production Worker build also passed for the Phase 1–2 source in [GitHub Actions](https://github.com/Jojolildog/Detailingdrive/actions/runs/43747729162). Browser QA and hosted D1 verification remain outstanding.
 
-The 25 dependency-free foundation tests pass locally and in GitHub Actions using Node's SQLite implementation. They exercise the actual SQL repositories and API handlers, including persistence after closing and reopening a database. Dependency installation, TypeScript checking, and the production Worker build also passed in [GitHub Actions](https://github.com/Jojolildog/Detailingdrive/actions/runs/43661798547). These checks are not a substitute for hosted D1 and browser verification.
+The tests exercise the actual SQL repositories and API handlers, including persistence after closing and reopening a database. Automated checks are not a substitute for hosted D1 and browser verification.
 
 This authoring environment cannot resolve the npm registry or the Sites source Git host and does not expose npm on PATH, so framework checks were completed in GitHub Actions. The hosted owner-bootstrap setting has been configured, but source synchronization to Sites and production publication remain blocked by the Sites Git-host DNS failure. Browser QA, real ChatGPT sign-in, and hosted D1 migration/application behavior have not been verified. A source commit or successful build does not mean the Site has been published.

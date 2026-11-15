@@ -62,4 +62,4 @@ A fresh database needs all numbered migrations, in order. Sites packages the mig
 
 Run `node --test tests/*.test.mjs` (or `npm test`) for the complete foundation/customer/vehicle integration suite. Coverage includes ownership and orphan prevention, customer pages, reassignment and deletion protection, service-history snapshots and pagination, filters, search, persistence after reopening, migration preservation, authorization, bounded input and stale changes.
 
-The current combined suite has 64 passing tests locally. UI type checking, a production build, browser QA and hosted D1 verification for Phases 1–2 remain outstanding in this environment. The earlier Phase 0 CI result must not be treated as verification of these changes.
+The combined suite has 64 passing tests locally and in [GitHub Actions](https://github.com/Jojolildog/Detailingdrive/actions/runs/43747729162). Dependency installation, UI type checking and the production Worker build passed for Phases 1–2. Browser QA and hosted D1 verification remain outstanding.
