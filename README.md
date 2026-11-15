@@ -1,4 +1,4 @@
-# DetailFlow — Phase 0
+# DetailFlow — Foundation, Customers and Vehicles
 
 A Hungarian-first foundation for a car detailing business management application.
 Built with React, TypeScript, the Sites Vinext starter, and Cloudflare D1.
@@ -11,9 +11,12 @@ Built with React, TypeScript, the Sites Vinext starter, and Cloudflare D1.
 - Dispatch-owned Sign in with ChatGPT and server-side owner authorization.
 - Persistent business settings, validation, request-size limits, same-origin write checks, and optimistic concurrency.
 - A schema-only SQL migration with 14 related tables, UUID primary keys, timestamps, and business boundaries.
-- Empty states for future customer, vehicle, job, service, inventory, equipment, and reporting workflows.
+- Customer create, edit, delete, list and detail pages with name/phone/email search, sorting and pagination.
+- Customer validation, stale-edit protection, actual registered-vehicle display and protected deletion of linked records.
+- Vehicle CRUD, searchable customer assignment, search and filters, real service history, and owned-vehicle links on customer pages.
+- Empty states for future job, service, inventory, equipment, and reporting workflows.
 
-Phase 0 does not implement customer CRUD, work-order operations, inventory deduction workflows, reporting calculations, subscriptions, or multi-business administration. No sample customers, jobs, equipment, chemicals, or financial figures are inserted.
+Customer and vehicle management are implemented after Phase 0. Work-order operations, inventory deduction workflows, reporting calculations, subscriptions, and multi-business administration remain future phases. No sample customers, jobs, equipment, chemicals, or financial figures are inserted into the application. See [Customer management](docs/customer-management.md) and [Vehicle management](docs/vehicle-management.md) for workflows, validation, API behavior and migration instructions.
 
 ## Development
 
@@ -41,7 +44,7 @@ All protected reads and writes resolve the owner on the server. `businessId` nev
 
 ## Database
 
-`drizzle/0000_foundation.sql` is the canonical, hand-authored SQL migration. The directory name follows the Sites migration packaging convention; the application uses typed D1 prepared statements rather than Drizzle's runtime ORM. `db/schema.ts` defines server query row types and maps database fields to camelCase DTOs. D1 applies the SQL on publication through Sites.
+The numbered SQL files in `drizzle/` are the canonical schema migrations. The directory name follows the Sites migration packaging convention; the application uses typed D1 prepared statements rather than Drizzle's runtime ORM. `db/schema.ts` defines server query row types and maps database fields to camelCase DTOs. D1 applies the SQL on publication through Sites.
 
 For a local D1 preview, first build the Worker, then apply the migration to the local database:
 
@@ -49,7 +52,7 @@ For a local D1 preview, first build the Worker, then apply the migration to the 
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_foundation.sql
 ```
 
-Apply it once per database. Append new numbered SQL migrations for later schema changes. Applied migration files and journal entries must remain immutable. This project does not use automatic schema generation.
+For a fresh database, apply all numbered SQL migrations in order. Existing databases need only pending migrations. Phase 1 adds `0001_customer_management.sql`; Phase 2 adds `0002_vehicle_management.sql`. Append new numbered SQL migrations for later schema changes. Applied migration files and journal entries must remain immutable. This project does not use automatic schema generation.
 
 | Tables | Purpose |
 |---|---|
@@ -77,6 +80,8 @@ SQL columns use snake_case; TypeScript and API fields use camelCase (`createdAt`
 
 ## Verification and publication status
 
-The 25 dependency-free foundation tests pass using Node's SQLite implementation. They exercise the actual SQL repositories and API handlers, including persistence after closing and reopening a database. They are not a substitute for hosted D1 and browser verification.
+The current combined 64-test foundation/customer/vehicle suite passes locally. Type checking, the production build, browser QA, and hosted D1 checks for the customer and vehicle UI remain unverified until the current revision is checked in a working build environment. The CI result below applies to the earlier Phase 0 source.
 
-At initial reconstruction, this authoring environment could not resolve the npm registry or the Sites source Git host and did not expose npm on PATH. Installation, framework type checking, browser QA, and production deployment therefore require confirmation through CI or a working development environment. A source commit does not mean the Site has been published. Consult GitHub Actions for the current CI result and Sites for deployment status.
+The 25 dependency-free foundation tests pass locally and in GitHub Actions using Node's SQLite implementation. They exercise the actual SQL repositories and API handlers, including persistence after closing and reopening a database. Dependency installation, TypeScript checking, and the production Worker build also passed in [GitHub Actions](https://github.com/Jojolildog/Detailingdrive/actions/runs/43661798547). These checks are not a substitute for hosted D1 and browser verification.
+
+This authoring environment cannot resolve the npm registry or the Sites source Git host and does not expose npm on PATH, so framework checks were completed in GitHub Actions. The hosted owner-bootstrap setting has been configured, but source synchronization to Sites and production publication remain blocked by the Sites Git-host DNS failure. Browser QA, real ChatGPT sign-in, and hosted D1 migration/application behavior have not been verified. A source commit or successful build does not mean the Site has been published.

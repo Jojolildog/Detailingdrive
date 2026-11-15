@@ -1,13 +1,14 @@
 import { DatabaseSync } from 'node:sqlite';
-import { readFileSync } from 'node:fs';
-const migration = readFileSync(new URL('../../drizzle/0000_foundation.sql', import.meta.url), 'utf8');
+import { readFileSync, readdirSync } from 'node:fs';
+const migrationDirectory = new URL('../../drizzle/', import.meta.url);
+const migrations = readdirSync(migrationDirectory).filter(name => /^\d+_.+\.sql$/u.test(name)).sort().map(name => readFileSync(new URL(name, migrationDirectory), 'utf8'));
 
 // Exercise the real SQL repositories against SQLite, matching D1's prepared
 // statement and atomic-batch semantics without a framework dependency.
 export function createDatabase(filename = ':memory:', migrate = true) {
   const sqlite = new DatabaseSync(filename);
   sqlite.exec('PRAGMA foreign_keys = ON');
-  if (migrate) sqlite.exec(migration);
+  if (migrate) for (const migration of migrations) sqlite.exec(migration);
   function prepare(sql, bindings = []) {
     return {
       bind(...values) { return prepare(sql, values); },

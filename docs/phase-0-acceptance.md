@@ -15,8 +15,10 @@
 
 ## Required before calling the deployed foundation ready
 
-1. Confirm CI installation, TypeScript and production build results.
-2. Configure the Site owner identity via runtime environment variables.
+Dependency installation, all 25 tests, TypeScript, and the production build have passed in GitHub Actions. The owner bootstrap email is configured in Sites runtime secrets. The remaining items below describe deployed-application acceptance and must still be verified.
+
+1. Keep CI installation, TypeScript and production build checks passing.
+2. Preserve the configured owner identity in runtime environment variables.
 3. Synchronize the source to the existing Site repository and publish owner-private.
 4. Confirm migrations applied in hosted D1.
 5. Verify sign-in and reject a non-owner request.

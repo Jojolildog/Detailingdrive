@@ -1,5 +1,13 @@
 import type { CSSProperties } from "react";
 const paths: Record<string, React.ReactNode> = {
+  plus: <path d="M12 5v14M5 12h14"/>,
+  back: <path d="M19 12H5m6-6-6 6 6 6"/>,
+  search: <><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></>,
+  edit: <><path d="m15 4 5 5M4 20l4-1 13-13-4-4L4 15l-1 6z"/></>,
+  trash: <><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7"/></>,
+  phone: <path d="M5 3h4l2 5-3 2c2 3 3 4 6 6l2-3 5 2v4c0 2-2 3-4 2C9 19 5 15 3 7 2 5 3 3 5 3Z"/>,
+  mail: <><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 6 9 7 9-7"/></>,
+  calendar: <><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 11h18m-13 4h2m4 0h2"/></>,
   dashboard: <><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="4" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="11" width="7" height="10" rx="1.5"/></>,
   users: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m20 0v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>,
   car: <><path d="m5 6-2 6v6h2m14 0h2v-6l-2-6H5zm-2 12H7m-4-6h18M7 18v3m10-3v3"/><path d="M7 15h.01M17 15h.01"/></>,
