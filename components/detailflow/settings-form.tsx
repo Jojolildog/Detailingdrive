@@ -48,8 +48,19 @@ export function SettingsForm({ settings, dictionary: d, onSaved, onDirtyChange }
     setSaving(true); setErrors({}); setMessage("");
     try {
       const response = await fetch("/api/settings", { method: "PUT", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify(parsed.data) });
-      const body = await response.json();
-      if (!response.ok) { setErrors({ ...(body.fields ?? {}), form: body.error ?? "unexpected" }); return; }
+      const payload: unknown = await response.json();
+      if (!payload || typeof payload !== "object" || Array.isArray(payload)) throw new Error("Invalid API response");
+      const body = payload as Record<string, unknown>;
+      if (!response.ok) {
+        const fields: SettingsErrors = {};
+        if (body.fields && typeof body.fields === "object" && !Array.isArray(body.fields)) {
+          for (const [key, value] of Object.entries(body.fields)) {
+            if (Object.hasOwn(settings, key) && typeof value === "string") fields[key as keyof BusinessSettings] = value;
+          }
+        }
+        setErrors({ ...fields, form: typeof body.error === "string" ? body.error : "unexpected" });
+        return;
+      }
       const verified = validateSettings(body.settings);
       if (!verified.success) throw new Error("Invalid settings response");
       setDraft(toDraft(verified.data));
