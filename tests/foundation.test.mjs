@@ -69,7 +69,7 @@ test('foundation starts empty and every table has UUID IDs and both timestamps',
   const db = createDatabase();
   try {
     const tables = db.sqlite.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all();
-    assert.equal(tables.length, 14);
+    assert.equal(tables.length, 15);
     for (const { name } of tables) {
       assert.equal(db.sqlite.prepare(`SELECT COUNT(*) AS n FROM ${name}`).get().n, 0);
       const columns = db.sqlite.prepare(`PRAGMA table_info(${name})`).all();

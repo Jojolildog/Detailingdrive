@@ -1,4 +1,4 @@
-# DetailFlow — Foundation, Customers and Vehicles
+# DetailFlow — Foundation, Customers, Vehicles and Services
 
 A Hungarian-first foundation for a car detailing business management application.
 Built with React, TypeScript, the Sites Vinext starter, and Cloudflare D1.
@@ -10,13 +10,15 @@ Built with React, TypeScript, the Sites Vinext starter, and Cloudflare D1.
 - Light, dark, and system appearance settings.
 - Dispatch-owned Sign in with ChatGPT and server-side owner authorization.
 - Persistent business settings, validation, request-size limits, same-origin write checks, and optimistic concurrency.
-- A schema-only SQL migration with 14 related tables, UUID primary keys, timestamps, and business boundaries.
+- Append-only SQL migrations with 15 related tables, UUID primary keys, timestamps, and business boundaries.
 - Customer create, edit, delete, list and detail pages with name/phone/email search, sorting and pagination.
 - Customer validation, stale-edit protection, actual registered-vehicle display and protected deletion of linked records.
 - Vehicle CRUD, searchable customer assignment, search and filters, real service history, and owned-vehicle links on customer pages.
-- Empty states for future job, service, inventory, equipment, and reporting workflows.
+- Service CRUD and catalog with editable whole-HUF pricing, duration, material plans, optional cost estimates, active status, search, filters, sorting and pagination.
+- Bundle composition schema for future service packages.
+- Empty states for future job, inventory, equipment, and reporting workflows.
 
-Customer and vehicle management are implemented after Phase 0. Work-order operations, inventory deduction workflows, reporting calculations, subscriptions, and multi-business administration remain future phases. No sample customers, jobs, equipment, chemicals, or financial figures are inserted into the application. See [Customer management](docs/customer-management.md) and [Vehicle management](docs/vehicle-management.md) for workflows, validation, API behavior and migration instructions.
+Customer, vehicle, and service management are implemented after Phase 0. Work-order operations, inventory deduction workflows, reporting calculations, subscriptions, and multi-business administration remain future phases. No sample customers, jobs, equipment, chemicals, or financial figures are inserted into the application. See [Customer management](docs/customer-management.md), [Vehicle management](docs/vehicle-management.md), and [Services and pricing](docs/services-pricing.md) for workflows, validation, API behavior and migration instructions.
 
 ## Development
 
@@ -52,13 +54,14 @@ For a local D1 preview, first build the Worker, then apply the migration to the 
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_foundation.sql
 ```
 
-For a fresh database, apply all numbered SQL migrations in order. Existing databases need only pending migrations. Phase 1 adds `0001_customer_management.sql`; Phase 2 adds `0002_vehicle_management.sql`. Append new numbered SQL migrations for later schema changes. Applied migration files and journal entries must remain immutable. This project does not use automatic schema generation.
+For a fresh database, apply all numbered SQL migrations in order. Existing databases need only pending migrations. Phase 1 adds `0001_customer_management.sql`; Phase 2 adds `0002_vehicle_management.sql`; Phase 3 adds `0003_services_pricing.sql`. Append new numbered SQL migrations for later schema changes. Applied migration files and journal entries must remain immutable. This project does not use automatic schema generation.
 
 | Tables | Purpose |
 |---|---|
 | `businesses`, `business_settings` | Single owner and persistent preferences |
 | `customers`, `vehicles` | Customer and vehicle boundaries |
 | `services`, `work_orders`, `work_order_services` | Job identity, independent job/payment statuses, selected-service snapshots |
+| `service_bundle_items` | Future bundle composition with business and service-type constraints |
 | `chemicals`, `inventory_movements` | Stock quantities and idempotent movement records |
 | `equipment`, `work_order_equipment` | Equipment specifications and actual operation time |
 | `work_order_chemicals`, `work_order_expenses` | Usage and categorized direct expenses |
