@@ -56,4 +56,4 @@ The bundle foundation separates a bundle service from its single-service compone
 
 The combined foundation, customer, vehicle and service suite passes locally: 84 tests. It covers persistence after reopening SQLite, additive migration, HUF/material validation, search/filter/sort/pagination, business boundaries, API access, conflicts, bundle constraints, protected deletion and preservation of historical job prices.
 
-TypeScript and production build verification will be recorded after GitHub Actions completes. Browser QA and hosted D1 migration/application verification remain outstanding; source publication is separate from deploying the Site.
+All 84 tests, locked dependency installation, TypeScript checking and the production Worker build also passed for source commit `04fdd8fe33b24d445bff68f25c7e45367be8186d` in [GitHub Actions](https://github.com/Jojolildog/Detailingdrive/actions/runs/43750374532). Browser QA and hosted D1 migration/application verification remain outstanding; source publication is separate from deploying the Site.
