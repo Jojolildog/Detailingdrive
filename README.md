@@ -1,4 +1,4 @@
-# DetailFlow — Foundation, Customers, Vehicles and Services
+# DetailFlow — Customers, Vehicles, Services and Work Orders
 
 A Hungarian-first foundation for a car detailing business management application.
 Built with React, TypeScript, the Sites Vinext starter, and Cloudflare D1.
@@ -16,9 +16,11 @@ Built with React, TypeScript, the Sites Vinext starter, and Cloudflare D1.
 - Vehicle CRUD, searchable customer assignment, search and filters, real service history, and owned-vehicle links on customer pages.
 - Service CRUD and catalog with editable whole-HUF pricing, duration, material plans, optional cost estimates, active status, search, filters, sorting and pagination.
 - Bundle composition schema for future service packages.
-- Empty states for future job, inventory, equipment, and reporting workflows.
+- Work order CRUD, customer/vehicle/service selection, saved service prices, job/payment statuses, search, filters and pagination.
+- Atomic work-order saves, relationship validation and protected deletion.
+- Empty states for future inventory, equipment, and reporting workflows.
 
-Customer, vehicle, and service management are implemented after Phase 0. Work-order operations, inventory deduction workflows, reporting calculations, subscriptions, and multi-business administration remain future phases. No sample customers, jobs, equipment, chemicals, or financial figures are inserted into the application. See [Customer management](docs/customer-management.md), [Vehicle management](docs/vehicle-management.md), and [Services and pricing](docs/services-pricing.md) for workflows, validation, API behavior and migration instructions.
+Customer, vehicle, service and work-order management are implemented after Phase 0. Inventory deduction workflows, reporting calculations, subscriptions, and multi-business administration remain future phases. No sample customers, jobs, equipment, chemicals, or financial figures are inserted into the application. See [Customer management](docs/customer-management.md), [Vehicle management](docs/vehicle-management.md), [Services and pricing](docs/services-pricing.md), and [Work orders](docs/work-orders.md) for workflows, validation, API behavior and migration instructions.
 
 ## Development
 
@@ -54,7 +56,7 @@ For a local D1 preview, first build the Worker, then apply the migration to the 
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_foundation.sql
 ```
 
-For a fresh database, apply all numbered SQL migrations in order. Existing databases need only pending migrations. Phase 1 adds `0001_customer_management.sql`; Phase 2 adds `0002_vehicle_management.sql`; Phase 3 adds `0003_services_pricing.sql`. Append new numbered SQL migrations for later schema changes. Applied migration files and journal entries must remain immutable. This project does not use automatic schema generation.
+For a fresh database, apply all numbered SQL migrations in order. Existing databases need only pending migrations. Phase 1 adds `0001_customer_management.sql`; Phase 2 adds `0002_vehicle_management.sql`; Phase 3 adds `0003_services_pricing.sql`; Phase 4 adds `0004_work_orders.sql`. Append new numbered SQL migrations for later schema changes. Applied migration files and journal entries must remain immutable. This project does not use automatic schema generation.
 
 | Tables | Purpose |
 |---|---|
@@ -83,7 +85,7 @@ SQL columns use snake_case; TypeScript and API fields use camelCase (`createdAt`
 
 ## Verification and publication status
 
-The combined 84-test foundation/customer/vehicle/service suite passes locally and in GitHub Actions. Locked dependency installation, TypeScript checking and the production Worker build also passed for Phase 3 source commit `04fdd8fe33b24d445bff68f25c7e45367be8186d` in [GitHub Actions](https://github.com/Jojolildog/Detailingdrive/actions/runs/43750374532). Browser QA and hosted D1 verification remain outstanding.
+The combined 113-test foundation/customer/vehicle/service/work-order suite passes locally. Phase 4 TypeScript and production Worker build checks are pending GitHub Actions. The prior Phase 3 source passed all checks in [GitHub Actions](https://github.com/Jojolildog/Detailingdrive/actions/runs/43750374532). Browser QA and hosted D1 verification remain outstanding.
 
 The tests exercise the actual SQL repositories and API handlers, including persistence after closing and reopening a database. Automated checks are not a substitute for hosted D1 and browser verification.
 

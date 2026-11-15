@@ -1,0 +1,68 @@
+"use client";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { isRecord } from "../../lib/customers.ts";
+import { formatHuf } from "../../lib/services.ts";
+import { fromBudapestInput, toBudapestInput, isWorkOrder, jobStatuses, paymentStatuses, validateWorkOrder, workOrderFields } from "../../lib/work-orders.ts";
+import type { WorkOrder, WorkOrderErrors, WorkOrderInput } from "../../lib/work-orders.ts";
+import type { Vehicle, VehicleOwner } from "../../lib/vehicles.ts";
+import { getDictionary } from "../../lib/i18n";
+import type { Locale } from "../../lib/settings.ts";
+import { CustomerPicker } from "../vehicles/customer-picker";
+import { useUnsavedChanges } from "../detailflow/unsaved-changes";
+import { Icon } from "../detailflow/icon";
+import { VehiclePicker } from "./vehicle-picker";
+import { ServicePicker } from "./service-picker";
+import type { ChosenService } from "./service-picker";
+import { workOrderApiErrors, workOrderErrorText } from "./api";
+
+type Draft = Omit<WorkOrderInput, "selectedServices" | "servicePrice" | "scheduledDate" | "startTime" | "finishTime"> & { selectedServices: ChosenService[]; servicePrice: string; scheduledDate: string; startTime: string; finishTime: string };
+export function WorkOrderForm({ workOrder, initialCustomer, initialVehicle, locale }: { workOrder?: WorkOrder; initialCustomer?: VehicleOwner; initialVehicle?: Vehicle; locale: Locale }) {
+  const d = getDictionary(locale); const router = useRouter(); const setUnsaved = useUnsavedChanges();
+  const [initial] = useState<Draft>(() => ({ customerId: workOrder?.customerId ?? initialCustomer?.id ?? "", vehicleId: workOrder?.vehicleId ?? initialVehicle?.id ?? "", selectedServices: workOrder?.selectedServices.map(row => ({ key: `snapshot:${row.id}`, snapshotId: row.id, serviceId: row.serviceId, serviceName: row.serviceName, servicePrice: row.servicePrice })) ?? [], scheduledDate: toBudapestInput(workOrder?.scheduledDate ?? null), startTime: toBudapestInput(workOrder?.startTime ?? null), finishTime: toBudapestInput(workOrder?.finishTime ?? null), jobStatus: workOrder?.jobStatus ?? "scheduled", paymentStatus: workOrder?.paymentStatus ?? "unpaid", servicePrice: workOrder?.servicePrice.toString() ?? "", notes: workOrder?.notes ?? "" }));
+  const [draft, setDraft] = useState(initial); const [customer, setCustomer] = useState(initialCustomer); const [vehicle, setVehicle] = useState(initialVehicle);
+  const [automaticPrice, setAutomaticPrice] = useState(!workOrder); const [errors, setErrors] = useState<WorkOrderErrors>({}); const [saving, setSaving] = useState(false); const [saved, setSaved] = useState(false);
+  const dirty = !saved && JSON.stringify(initial) !== JSON.stringify(draft); const cancelPath = workOrder ? `/work-orders/${workOrder.id}` : "/work-orders";
+  useEffect(() => { setUnsaved(dirty); return () => setUnsaved(false); }, [dirty, setUnsaved]);
+  useEffect(() => { const warn = (event: BeforeUnloadEvent) => { if (dirty) { event.preventDefault(); event.returnValue = ""; } }; window.addEventListener("beforeunload", warn); return () => window.removeEventListener("beforeunload", warn); }, [dirty]);
+  function change<K extends keyof Draft>(key: K, value: Draft[K]) { setDraft(current => ({ ...current, [key]: value })); setErrors(current => ({ ...current, [key]: undefined, form: undefined })); }
+  function chooseServices(rows: ChosenService[]) { setDraft(current => ({ ...current, selectedServices: rows, ...(automaticPrice ? { servicePrice: rows.length ? rows.reduce((sum, row) => sum + row.servicePrice, 0).toString() : "" } : {}) })); setErrors(current => ({ ...current, selectedServices: undefined, form: undefined })); }
+  function confirmLeave(event: React.MouseEvent<HTMLAnchorElement>) { if (saving || dirty && !window.confirm(d.workOrders.leave)) event.preventDefault(); }
+  function report(value: WorkOrderErrors) { setErrors(value); const field = workOrderFields.find(key => value[key]); requestAnimationFrame(() => document.getElementById(field ? `work-${field}` : "work-errors")?.focus()); }
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault(); if (saving || saved) return;
+    const dateValues = Object.fromEntries((["scheduledDate", "startTime", "finishTime"] as const).map(key => [key, workOrder && draft[key] === initial[key] ? workOrder[key] : fromBudapestInput(draft[key]) ?? (draft[key] ? draft[key] : null)]));
+    const parsed = validateWorkOrder({ ...draft, ...dateValues, selectedServices: draft.selectedServices.map(({ serviceId, snapshotId }) => ({ serviceId, ...(snapshotId ? { snapshotId } : {}) })), servicePrice: draft.servicePrice.trim() ? /^\d+$/u.test(draft.servicePrice.trim()) ? Number(draft.servicePrice) : NaN : null, ...(workOrder ? { version: workOrder.version } : {}) }, Boolean(workOrder));
+    if (!parsed.success) { report(parsed.errors); return; }
+    setSaving(true); setErrors({});
+    try {
+      const response = await fetch(workOrder ? `/api/work-orders/${workOrder.id}` : "/api/work-orders", { method: workOrder ? "PUT" : "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...parsed.data, ...(workOrder ? { version: workOrder.version } : {}) }) });
+      const payload: unknown = await response.json(); if (!response.ok) { report(workOrderApiErrors(payload)); return; }
+      if (!isRecord(payload) || !isWorkOrder(payload.workOrder)) throw new Error("Invalid work order response");
+      setSaved(true); setUnsaved(false); router.replace(`/work-orders/${payload.workOrder.id}`); router.refresh();
+    } catch { report({ form: "unexpected" }); } finally { setSaving(false); }
+  }
+  const serviceTotal = draft.selectedServices.reduce((sum, row) => sum + row.servicePrice, 0);
+  return <div className="customer-form-wrap work-form-wrap"><Link href={cancelPath} className="back-link" onClick={confirmLeave}><Icon name="back" size={16}/>{d.workOrders.back}</Link>
+    <form className="customer-form work-order-form" noValidate onSubmit={submit}><fieldset className="settings-fieldset" disabled={saving || saved}>
+      <section className="panel form-section"><div className="section-heading"><span className="section-icon"><Icon name="users"/></span><h2>{d.workOrders.customer} &amp; {d.workOrders.vehicle}</h2></div><div className="work-party-grid"><div>
+        <CustomerPicker id="work-customerId" value={draft.customerId} initialCustomer={customer} locale={locale} required error={errors.customerId} errorMessage={workOrderErrorText(d, errors.customerId)} onChange={id => { setDraft(current => ({ ...current, customerId: id, vehicleId: "" })); setVehicle(undefined); setErrors(current => ({ ...current, customerId: undefined, vehicleId: undefined, form: undefined })); }} onSelected={setCustomer}/>
+        {customer && customer.id === draft.customerId && <div className="work-autofill"><strong>{customer.fullName}</strong><a href={`tel:${customer.phoneNumber.replace(/[^\d+]/g, "")}`}>{customer.phoneNumber}</a>{customer.email && <a href={`mailto:${encodeURIComponent(customer.email)}`}>{customer.email}</a>}</div>}
+      </div><div><VehiclePicker key={draft.customerId} customerId={draft.customerId} value={draft.vehicleId} selected={vehicle} locale={locale} error={errors.vehicleId} onChange={next => { setVehicle(next); change("vehicleId", next?.id ?? ""); }}/>
+        {vehicle && vehicle.customerId === draft.customerId && <div className="work-autofill"><strong>{vehicle.manufacturer} {vehicle.model}</strong><span>{[vehicle.productionYear, vehicle.registrationNumber, vehicle.color].filter(Boolean).join(" · ") || d.workOrders.unset}</span><span>{d.vehicles[vehicle.sizeCategory]}</span></div>}
+      </div></div></section>
+      <section className="panel form-section"><div className="section-heading"><span className="section-icon"><Icon name="sparkles"/></span><h2>{d.workOrders.pricing}</h2></div><p className="field-hint">{d.workOrders.snapshotHint}</p>
+        <div id="work-selectedServices" tabIndex={-1} aria-invalid={Boolean(errors.selectedServices)} aria-describedby="work-services-help" className="work-selected-services"><h3>{d.workOrders.selectedServices} <span className="step-badge">{draft.selectedServices.length} / 50</span></h3>{draft.selectedServices.length === 0 ? <p className="muted">{d.workOrders.noSelection}</p> : <ul>{draft.selectedServices.map(row => <li key={row.key}><span><strong>{row.serviceName}</strong><small>{formatHuf(row.servicePrice, locale)}</small></span><button type="button" className="icon-button customer-delete" aria-label={`${d.workOrders.removeService}: ${row.serviceName}`} onClick={() => chooseServices(draft.selectedServices.filter(item => item.key !== row.key))}><Icon name="trash" size={17}/></button></li>)}</ul>}</div>
+        {errors.selectedServices && <p className="field-error" id="work-services-help">{workOrderErrorText(d, errors.selectedServices)}</p>}
+        <div className="work-price-total"><span>{d.workOrders.catalogTotal}<strong>{draft.selectedServices.length ? formatHuf(serviceTotal, locale) : d.workOrders.unset}</strong></span><button type="button" className="button secondary" disabled={!draft.selectedServices.length} onClick={() => { change("servicePrice", String(serviceTotal)); setAutomaticPrice(true); }}>{d.workOrders.useTotal}</button></div>
+        <div className="field"><label htmlFor="work-servicePrice">{d.workOrders.servicePrice}<span className="optional">{d.workOrders.required}</span></label><input id="work-servicePrice" inputMode="numeric" required maxLength={12} value={draft.servicePrice} onChange={event => { setAutomaticPrice(false); change("servicePrice", event.target.value); }} aria-invalid={Boolean(errors.servicePrice)} aria-describedby="work-price-help"/><p id="work-price-help" className={errors.servicePrice ? "field-error" : "field-hint"}>{errors.servicePrice ? workOrderErrorText(d, errors.servicePrice) : d.workOrders.priceHint}</p></div>
+        <ServicePicker selected={draft.selectedServices} onChange={chooseServices} locale={locale}/>
+      </section>
+      <section className="panel form-section"><div className="section-heading"><span className="section-icon"><Icon name="calendar"/></span><h2>{d.workOrders.timing}</h2></div><div className="work-time-grid">{(["scheduledDate", "startTime", "finishTime"] as const).map(key => <div className="field" key={key}><label htmlFor={`work-${key}`}>{d.workOrders[key]}<span className="optional">{d.workOrders.optional}</span></label><input id={`work-${key}`} type="datetime-local" step={1} value={draft[key]} onChange={event => change(key, event.target.value)} aria-invalid={Boolean(errors[key])} aria-describedby={errors[key] ? `work-${key}-error` : "work-time-help"}/>{errors[key] && <p id={`work-${key}-error`} className="field-error">{workOrderErrorText(d, errors[key])}</p>}</div>)}</div><p id="work-time-help" className="field-hint">{d.workOrders.timeHint}</p></section>
+      <section className="panel form-section"><div className="section-heading"><span className="section-icon"><Icon name="clipboard"/></span><h2>{d.workOrders.statuses}</h2></div><div className="work-party-grid"><div className="field"><label htmlFor="work-jobStatus">{d.workOrders.jobStatus}</label><select id="work-jobStatus" value={draft.jobStatus} onChange={event => change("jobStatus", event.target.value as Draft["jobStatus"])}>{jobStatuses.map(status => <option key={status} value={status}>{d.workOrders[status]}</option>)}</select>{errors.jobStatus && <p className="field-error">{workOrderErrorText(d, errors.jobStatus)}</p>}</div><div className="field"><label htmlFor="work-paymentStatus">{d.workOrders.paymentStatus}</label><select id="work-paymentStatus" value={draft.paymentStatus} onChange={event => change("paymentStatus", event.target.value as Draft["paymentStatus"])}>{paymentStatuses.map(status => <option key={status} value={status}>{d.workOrders[status]}</option>)}{workOrder?.paymentStatus === "refunded" && <option value="refunded">{d.workOrders.refunded}</option>}</select>{errors.paymentStatus && <p className="field-error">{workOrderErrorText(d, errors.paymentStatus)}</p>}</div></div><p className="field-hint">{d.workOrders.statusHint}</p></section>
+      <section className="panel form-section"><div className="field"><label htmlFor="work-notes">{d.workOrders.notes}<span className="optional">{d.workOrders.optional}</span></label><textarea id="work-notes" rows={5} maxLength={10000} value={draft.notes} onChange={event => change("notes", event.target.value)} aria-invalid={Boolean(errors.notes)} aria-describedby="work-notes-help"/><p id="work-notes-help" className={errors.notes ? "field-error" : "field-hint"}>{errors.notes ? workOrderErrorText(d, errors.notes) : d.workOrders.notesHint}</p></div></section>
+    </fieldset>{Object.values(errors).some(Boolean) && <div id="work-errors" tabIndex={-1} className="notice error-notice" role="alert">{errors.form ? workOrderErrorText(d, errors.form) : d.workOrders.validationTitle}</div>}{errors.form === "workOrderConflict" && <button className="button secondary" type="button" onClick={() => { if (window.confirm(d.workOrders.leave)) window.location.reload(); }}>{d.workOrders.reload}</button>}
+    <div className="customer-form-actions"><Link className="button secondary" href={cancelPath} aria-disabled={saving} onClick={confirmLeave}>{d.workOrders.cancel}</Link><button className="button primary" type="submit" disabled={saving || saved}>{saving ? d.workOrders.saving : d.workOrders.save}<Icon name="check" size={17}/></button></div></form>
+  </div>;
+}

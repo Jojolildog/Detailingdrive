@@ -8,8 +8,8 @@ import type { Locale } from "../../lib/settings.ts";
 import { Icon } from "../detailflow/icon";
 import { vehicleErrorText } from "./api";
 
-export function CustomerPicker({ id = "vehicle-customerId", value, initialCustomer, onChange, locale, required = false, error }: {
-  id?: string; value: string; initialCustomer?: VehicleOwner; onChange: (id: string) => void; locale: Locale; required?: boolean; error?: string;
+export function CustomerPicker({ id = "vehicle-customerId", value, initialCustomer, onChange, onSelected, locale, required = false, error, errorMessage }: {
+  id?: string; value: string; initialCustomer?: VehicleOwner; onChange: (id: string) => void; onSelected?: (customer?: VehicleOwner) => void; locale: Locale; required?: boolean; error?: string; errorMessage?: string;
 }) {
   const d = getDictionary(locale); const [search, setSearch] = useState(""); const [page, setPage] = useState(1); const [retry, setRetry] = useState(0);
   const [selected, setSelected] = useState<VehicleOwner | undefined>(initialCustomer);
@@ -37,12 +37,12 @@ export function CustomerPicker({ id = "vehicle-customerId", value, initialCustom
     <label htmlFor={id}>{d.vehicles.customer}{required && <span className="optional">{d.vehicles.required}</span>}</label>
     <label className="sr-only" htmlFor={`${id}-search`}>{d.vehicles.findCustomer}</label>
     <div className="owner-search"><Icon name="search" size={16}/><input id={`${id}-search`} type="search" autoComplete="off" maxLength={200} placeholder={d.vehicles.findCustomer} value={search} onKeyDown={event => { if (event.key === "Enter") event.preventDefault(); }} onChange={event => { setSearch(event.target.value); setPage(1); }}/></div>
-    <select id={id} name="customerId" required={required} value={value} aria-invalid={Boolean(error)} aria-describedby={`${id}-help`} onChange={event => { const next = options.find(customer => customer.id === event.target.value); setSelected(next); onChange(event.target.value); }}>
+    <select id={id} name="customerId" required={required} value={value} aria-invalid={Boolean(error)} aria-describedby={`${id}-help`} onChange={event => { const next = options.find(customer => customer.id === event.target.value); setSelected(next); onChange(event.target.value); onSelected?.(next); }}>
       <option value="">{required ? d.vehicles.chooseCustomer : d.vehicles.allCustomers}</option>
       {value && !options.some(customer => customer.id === value) && <option value={value}>{d.vehicles.customerUnavailable}</option>}
       {options.map(customer => <option key={customer.id} value={customer.id}>{customer.fullName} · {customer.phoneNumber}</option>)}
     </select>
-    <p id={`${id}-help`} className={error ? "field-error" : "field-hint"}>{error ? vehicleErrorText(d, error) : required ? d.vehicles.customerRequiredHint : d.vehicles.allCustomers}</p>
+    <p id={`${id}-help`} className={error ? "field-error" : "field-hint"}>{error ? errorMessage ?? vehicleErrorText(d, error) : required ? d.vehicles.customerRequiredHint : d.vehicles.allCustomers}</p>
     {loadError ? <div className="owner-picker-error" role="alert"><span>{vehicleErrorText(d, loadError)}</span><button type="button" className="button secondary" onClick={() => setRetry(value => value + 1)}>{d.vehicles.retry}</button></div> : <div className="owner-picker-status"><span role="status">{loading ? d.vehicles.customerLoading : result.total === 0 ? d.vehicles.customerNoResults : `${result.total} ${d.customers.countLabel}`}</span>{result.totalPages > 1 && <div><button type="button" className="icon-button" disabled={loading || result.page <= 1} aria-label={d.vehicles.previous} onClick={() => setPage(result.page - 1)}><Icon name="back" size={15}/></button><span>{result.page} / {result.totalPages}</span><button type="button" className="icon-button" disabled={loading || result.page >= result.totalPages} aria-label={d.vehicles.next} onClick={() => setPage(result.page + 1)}><Icon name="arrow" size={15}/></button></div>}</div>}
   </div>;
 }

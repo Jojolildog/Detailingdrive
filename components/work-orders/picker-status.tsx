@@ -1,0 +1,6 @@
+"use client";
+import type { Dictionary } from "../../lib/i18n";
+import { workOrderErrorText } from "./api";
+export function PickerStatus({ d, result, page, onPage }: { d: Dictionary; result: { error: string; loading: boolean; page: number; totalPages: number; retry: () => void }; page: number; onPage: (page: number) => void }) {
+  return <div className="owner-picker-status">{result.error ? <div role="alert" className="owner-picker-error"><span>{workOrderErrorText(d, result.error)}</span><button type="button" className="button secondary" onClick={result.retry}>{d.workOrders.retry}</button></div> : <><span role="status">{result.loading ? d.workOrders.loading : `${d.workOrders.page} ${result.page} / ${result.totalPages}`}</span><div role="group" aria-label={d.workOrders.pickerPagination}><button className="icon-button" type="button" disabled={result.loading || result.page <= 1} aria-label={d.workOrders.previous} onClick={() => onPage(result.page - 1)}>‹</button><button className="icon-button" type="button" disabled={result.loading || result.page >= result.totalPages} aria-label={d.workOrders.next} onClick={() => onPage(result.page + 1)}>›</button>{page !== result.page && !result.loading && result.totalPages > 1 && <span>{result.page}</span>}</div></>}</div>;
+}
