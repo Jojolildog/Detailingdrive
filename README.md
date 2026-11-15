@@ -85,7 +85,7 @@ SQL columns use snake_case; TypeScript and API fields use camelCase (`createdAt`
 
 ## Verification and publication status
 
-The combined 113-test foundation/customer/vehicle/service/work-order suite passes locally. Phase 4 TypeScript and production Worker build checks are pending GitHub Actions. The prior Phase 3 source passed all checks in [GitHub Actions](https://github.com/Jojolildog/Detailingdrive/actions/runs/43750374532). Browser QA and hosted D1 verification remain outstanding.
+The combined 113-test foundation/customer/vehicle/service/work-order suite passes locally and in GitHub Actions. Locked dependency installation, TypeScript checking and the production Worker build also passed for Phase 4 source commit `2ecac4198f17bcbbe5d2cdef715efe87b5d4a8f1` in [GitHub Actions](https://github.com/Jojolildog/Detailingdrive/actions/runs/43753408062). Browser QA and hosted D1 verification remain outstanding.
 
 The tests exercise the actual SQL repositories and API handlers, including persistence after closing and reopening a database. Automated checks are not a substitute for hosted D1 and browser verification.
 
